@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>多维表格公式助手</title>
+    <style>
+        /* ===== 全局重置 & 字体 ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f7f8fa;
+            color: #1d2129;
+            padding: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* ===== 头部 ===== */
+        .header {
+            margin-bottom: 16px;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1d2129;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header h1 .badge {
+            font-size: 11px;
+            font-weight: 400;
+            background: #e8f3ff;
+            color: #3370ff;
+            padding: 0 8px;
+            border-radius: 10px;
+            line-height: 20px;
+        }
+
+        .header .sub {
+            font-size: 13px;
+            color: #86909c;
+            margin-top: 2px;
+        }
+
+        /* ===== 搜索框 ===== */
+        .search-box {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 8px 12px 8px 36px;
+            border: 1px solid #e5e6eb;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #ffffff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        .search-box input:focus {
+            border-color: #3370ff;
+            box-shadow: 0 0 0 3px rgba(51, 112, 255, 0.15);
+        }
+
+        .search-box input::placeholder {
+            color: #c9cdd4;
+        }
+
+        .search-box .icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #c9cdd4;
+            font-size: 16px;
+            pointer-events: none;
+        }
+
+        /* ===== 分类标签 ===== */
+        .category-tabs {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .category-tabs .tab {
+            padding: 4px 14px;
+            border-radius: 14px;
+            font-size: 13px;
+            background: #f2f3f5;
+            color: #4e5a70;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            border: none;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .category-tabs .tab:hover {
+            background: #e5e6eb;
+        }
+
+        .category-tabs .tab.active {
+            background: #3370ff;
+            color: #ffffff;
+        }
+
+        /* ===== 公式列表 ===== */
+        .formula-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .formula-item {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 12px 14px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            border: 1px solid #f0f1f3;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            cursor: default;
+        }
+
+        .formula-item:hover {
+            border-color: #d9dadd;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .formula-item .name {
+            font-weight: 600;
+            font-size: 15px;
+            color: #1d2129;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .formula-item .name .copy-btn {
+            font-size: 12px;
+            font-weight: 400;
+            color: #3370ff;
+            background: #f0f5ff;
+            padding: 0 10px;
+            border-radius: 12px;
+            line-height: 22px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border: none;
+            user-select: none;
+        }
+
+        .formula-item .name .copy-btn:hover {
+            background: #dce8ff;
+        }
+
+        .formula-item .name .copy-btn.copied {
+            background: #e8f5e9;
+            color: #34a853;
+        }
+
+        .formula-item .syntax {
+            font-family: "SF Mono", "Menlo", "Monaco", "Consolas", monospace;
+            font-size: 13px;
+            color: #4e5a70;
+            background: #f7f8fa;
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 4px 0 2px;
+            word-break: break-all;
+        }
+
+        .formula-item .desc {
+            font-size: 13px;
+            color: #4e5a70;
+            margin-top: 4px;
+        }
+
+        .formula-item .example {
+            font-size: 13px;
+            color: #86909c;
+            margin-top: 4px;
+            padding: 4px 10px;
+            background: #f7f8fa;
+            border-radius: 4px;
+            font-family: "SF Mono", "Menlo", "Monaco", "Consolas", monospace;
+            word-break: break-all;
+        }
+
+        .formula-item .example strong {
+            color: #4e5a70;
+            font-weight: 500;
+        }
+
+        /* ===== 空状态 ===== */
+        .empty {
+            text-align: center;
+            color: #86909c;
+            padding: 40px 0;
+            font-size: 14px;
+        }
+
+        /* ===== 统计信息 ===== */
+        .stats {
+            font-size: 12px;
+            color: #86909c;
+            margin-top: 16px;
+            text-align: center;
+            border-top: 1px solid #f0f1f3;
+            padding-top: 14px;
+        }
+
+        /* ===== 滚动条美化 ===== */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d9dadd;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #c9cdd4;
+        }
+
+        /* ===== Toast 提示 ===== */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1d2129;
+            color: #ffffff;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== 头部 ===== -->
+    <div class="header">
+        <h1>
+            📐 公式助手
+            <span class="badge">多维表格</span>
+        </h1>
+        <div class="sub">点击公式旁的「复制」即可粘贴到编辑器</div>
+    </div>
+
+    <!-- ===== 搜索框 ===== -->
+    <div class="search-box">
+        <span class="icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="搜索公式名称、功能…" />
+    </div>
+
+    <!-- ===== 分类标签 ===== -->
+    <div class="category-tabs" id="categoryTabs">
+        <!-- 由 JavaScript 动态渲染 -->
+    </div>
+
+    <!-- ===== 公式列表 ===== -->
+    <div class="formula-list" id="formulaList">
+        <!-- 由 JavaScript 动态渲染 -->
+    </div>
+
+    <!-- ===== 统计信息 ===== -->
+    <div class="stats" id="stats">加载中…</div>
+
+    <!-- ===== Toast ===== -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ================================================================
+        // 1. 数据：从飞书官方文档整理的多维表格公式（按分类）
+        //    来源：https://www.feishu.cn/hc/zh-CN/articles/687638790379
+        //         https://www.larksuite.com/hc/en-US/articles/914838661184
+        // ================================================================
+        const FORMULAS = [{
+            category: "日期与时间",
+            list: [
+                { name: "DATE", syntax: "DATE(年, 月, 日)", desc: "将年、月、日的数字转换为日期", example: 'DATE(2000, 1, 1) → 2000/01/01' },
+                { name: "DATEDIF", syntax: "DATEDIF(起始日期, 结束日期, 单位)", desc: "返回两个日期之间的天数、月数或年数", example: 'DATEDIF("2000-01-01", "2000-01-08", "D") → 7' },
+                { name: "DAY", syntax: "DAY(日期值)", desc: "以数字格式返回特定日期的「日」", example: 'DAY("2000-01-03") → 3' },
+                { name: "DAYS", syntax: "DAYS(结束日期, 起始日期)", desc: "返回起始日期与结束日期之间的天数", example: 'DAYS("2000-01-08", "2000-01-01") → 7' },
+                { name: "EDATE", syntax: "EDATE(开始日期, 月数)", desc: "返回开始日期之前或之后指定月数的日期", example: 'EDATE("2011/01/31", 1) → 2011/02/28' },
+                { name: "EOMONTH", syntax: "EOMONTH(开始日期, 月数)", desc: "返回与开始日期相隔数月的某月最后一天", example: 'EOMONTH("2000-1-1", 1) → 2000/2/28' },
+                { name: "HOUR", syntax: "HOUR(时间)", desc: "以数字格式返回特定时间的小时部分", example: 'HOUR("11:40:59") → 11' },
+                { name: "MINUTE", syntax: "MINUTE(时间)", desc: "以数字格式返回特定时间的分钟部分", example: 'MINUTE("11:40:59") → 40' },
+                { name: "MONTH", syntax: "MONTH(日期值)", desc: "以数字格式返回特定日期对应的月份", example: 'MONTH("2000-12-01") → 12' },
+                { name: "NETWORKDAYS", syntax: "NETWORKDAYS(起始日期, 结束日期, [节假日])", desc: "返回两个日期之间的净工作日天数", example: 'NETWORKDAYS("2000-01-01", "2000-01-12") → 8' },
+                { name: "NOW", syntax: "NOW()", desc: "返回当前日期和时间（每5分钟更新）", example: 'NOW() → 2026-06-24 14:30:00' },
+                { name: "SECOND", syntax: "SECOND(时间)", desc: "以数字格式返回特定时间的秒部分", example: 'SECOND("11:40:59") → 59' },
+                { name: "TIME", syntax: "TIME(时, 分, 秒)", desc: "将时、分、秒数字转换为时间", example: 'TIME(14, 30, 0) → 14:30:00' },
+                { name: "TODAY", syntax: "TODAY()", desc: "返回当前日期", example: 'TODAY() → 2026-06-24' },
+                { name: "WEEKDAY", syntax: "WEEKDAY(日期值, [返回类型])", desc: "以数字格式返回日期对应的星期几", example: 'WEEKDAY("2000-01-03") → 2（默认周一为1）' },
+                { name: "WEEKNUM", syntax: "WEEKNUM(日期值, [返回类型])", desc: "返回日期在一年中的第几周", example: 'WEEKNUM("2000-01-03") → 2' },
+                { name: "WORKDAY", syntax: "WORKDAY(起始日期, 天数, [节假日])", desc: "返回起始日期之前或之后指定工作日数的日期", example: 'WORKDAY("2000-01-01", 5) → 2000/01/10' },
+                { name: "YEAR", syntax: "YEAR(日期值)", desc: "以数字格式返回特定日期对应的年份", example: 'YEAR("2000-12-01") → 2000' },
+                { name: "YEARFRAC", syntax: "YEARFRAC(起始日期, 结束日期, [基准])", desc: "返回起始日期与结束日期之间的天数占全年比例", example: 'YEARFRAC("2000-01-01", "2000-07-01") → 0.5' },
+            ]
+        }, {
+            category: "逻辑",
+            list: [
+                { name: "AND", syntax: "AND(条件1, 条件2, ...)", desc: "所有条件都为 TRUE 时返回 TRUE", example: 'AND(1 > 0, 2 > 1) → TRUE' },
+                { name: "FALSE", syntax: "FALSE()", desc: "返回逻辑值 FALSE", example: 'FALSE() → FALSE' },
+                { name: "IF", syntax: "IF(条件, 真值, 假值)", desc: "根据条件判断返回不同结果", example: 'IF(1 > 0, "是", "否") → "是"' },
+                { name: "IFBLANK", syntax: "IFBLANK(值, 替代值)", desc: "如果值为空则返回替代值", example: 'IFBLANK(A1, "暂无")' },
+                { name: "IFERROR", syntax: "IFERROR(值, 错误时返回)", desc: "如果表达式出错则返回指定值", example: 'IFERROR(1/0, "错误") → "错误"' },
+                { name: "IFS", syntax: "IFS(条件1, 值1, 条件2, 值2, ...)", desc: "多个条件依次判断，返回首个 TRUE 对应的值", example: 'IFS(A1>90, "优", A1>60, "良", TRUE, "差")' },
+                { name: "ISBLANK", syntax: "ISBLANK(值)", desc: "判断值是否为空", example: 'ISBLANK(A1) → TRUE / FALSE' },
+                { name: "ISERROR", syntax: "ISERROR(值)", desc: "判断值是否为错误", example: 'ISERROR(1/0) → TRUE' },
+                { name: "ISNUMBER", syntax: "ISNUMBER(值)", desc: "判断值是否为数字", example: 'ISNUMBER(123) → TRUE' },
+                { name: "ISTEXT", syntax: "ISTEXT(值)", desc: "判断值是否为文本", example: 'ISTEXT("飞书") → TRUE' },
+                { name: "NOT", syntax: "NOT(条件)", desc: "对条件取反", example: 'NOT(1 > 0) → FALSE' },
+                { name: "OR", syntax: "OR(条件1, 条件2, ...)", desc: "任一条件为 TRUE 时返回 TRUE", example: 'OR(1 < 0, 2 > 1) → TRUE' },
+                { name: "SWITCH", syntax: "SWITCH(表达式, 值1, 结果1, 值2, 结果2, ..., 默认值)", desc: "根据表达式的值匹配对应结果", example: 'SWITCH(A1, 1, "一", 2, "二", "其他")' },
+                { name: "TRUE", syntax: "TRUE()", desc: "返回逻辑值 TRUE", example: 'TRUE() → TRUE' },
+                { name: "XOR", syntax: "XOR(条件1, 条件2, ...)", desc: "奇数个条件为 TRUE 时返回 TRUE", example: 'XOR(TRUE, FALSE) → TRUE' },
+            ]
+        }, {
+            category: "文本",
+            list: [
+                { name: "ARRAYJOIN", syntax: "ARRAYJOIN(数组, [分隔符])", desc: "将数组中的元素连接为文本", example: 'ARRAYJOIN(LIST("a","b","c"), ",") → "a,b,c"' },
+                { name: "CONCAT", syntax: "CONCAT(文本1, 文本2, ...)", desc: "将多个文本连接在一起", example: 'CONCAT("飞书", "多维表格") → "飞书多维表格"' },
+                { name: "CONTAIN", syntax: "CONTAIN(文本, 搜索字符串)", desc: "判断文本是否包含指定字符串", example: 'CONTAIN("飞书多维表格", "多维") → TRUE' },
+                { name: "FIND", syntax: "FIND(搜索字符串, 文本, [起始位置])", desc: "返回搜索字符串在文本中的位置", example: 'FIND("维", "飞书多维表格") → 3' },
+                { name: "LEFT", syntax: "LEFT(文本, 字符数)", desc: "从文本左侧提取指定数量的字符", example: 'LEFT("飞书多维表格", 2) → "飞书"' },
+                { name: "LEN", syntax: "LEN(文本)", desc: "返回文本的字符数", example: 'LEN("飞书多维表格") → 6' },
+                { name: "LOWER", syntax: "LOWER(文本)", desc: "将文本转换为小写", example: 'LOWER("FEISHU") → "feishu"' },
+                { name: "MID", syntax: "MID(文本, 起始位置, 字符数)", desc: "从文本指定位置提取指定数量的字符", example: 'MID("飞书多维表格", 3, 2) → "多维"' },
+                { name: "REPLACE", syntax: "REPLACE(文本, 起始位置, 字符数, 新文本)", desc: "替换文本中指定位置的字符", example: 'REPLACE("飞书多维表格", 3, 2, "电子") → "飞书电子表格"' },
+                { name: "RIGHT", syntax: "RIGHT(文本, 字符数)", desc: "从文本右侧提取指定数量的字符", example: 'RIGHT("飞书多维表格", 2) → "表格"' },
+                { name: "SEARCH", syntax: "SEARCH(搜索字符串, 文本, [起始位置])", desc: "返回搜索字符串在文本中的位置（不区分大小写）", example: 'SEARCH("we", "Feishu") → 4' },
+                { name: "TEXT", syntax: "TEXT(值, 格式代码)", desc: "按格式代码对值进行格式化", example: 'TEXT(1234.56, "#,##0.00") → "1,234.56"' },
+                { name: "TRIM", syntax: "TRIM(文本)", desc: "去除文本首尾及多余空格", example: 'TRIM("  飞书  ") → "飞书"' },
+                { name: "UPPER", syntax: "UPPER(文本)", desc: "将文本转换为大写", example: 'UPPER("feishu") → "FEISHU"' },
+                { name: "VALUE", syntax: "VALUE(文本)", desc: "将文本转换为数字", example: 'VALUE("123") → 123' },
+            ]
+        }, {
+            category: "统计与数学",
+            list: [
+                { name: "AVERAGE", syntax: "AVERAGE(数字1, 数字2, ...)", desc: "返回所有数值的平均值", example: 'AVERAGE(1, 2, 3) → 2' },
+                { name: "CEILING", syntax: "CEILING(数字, 基数)", desc: "将数字向上舍入到最接近的基数的倍数", example: 'CEILING(2.3, 1) → 3' },
+                { name: "COUNT", syntax: "COUNT(值1, 值2, ...)", desc: "统计数字的个数", example: 'COUNT(1, "a", 2) → 2' },
+                { name: "COUNTA", syntax: "COUNTA(值1, 值2, ...)", desc: "统计非空值的个数", example: 'COUNTA(1, "a", "") → 2' },
+                { name: "COUNTIF", syntax: "COUNTIF(范围, 条件)", desc: "统计范围内满足条件的单元格个数", example: 'COUNTIF([分数], ">60")' },
+                { name: "FLOOR", syntax: "FLOOR(数字, 基数)", desc: "将数字向下舍入到最接近的基数的倍数", example: 'FLOOR(2.9, 1) → 2' },
+                { name: "MAX", syntax: "MAX(数字1, 数字2, ...)", desc: "返回所有数值中的最大值", example: 'MAX(1, 5, 3) → 5' },
+                { name: "MEDIAN", syntax: "MEDIAN(数字1, 数字2, ...)", desc: "返回所有数值的中位数", example: 'MEDIAN(1, 3, 5) → 3' },
+                { name: "MIN", syntax: "MIN(数字1, 数字2, ...)", desc: "返回所有数值中的最小值", example: 'MIN(1, 5, 3) → 1' },
+                { name: "RANK", syntax: "RANK(数字, 范围, [排序方式])", desc: "返回数字在一组数据中的排名", example: 'RANK(85, [分数])' },
+                { name: "ROUND", syntax: "ROUND(数字, 小数位数)", desc: "将数字四舍五入到指定小数位数", example: 'ROUND(3.14159, 2) → 3.14' },
+                { name: "SUM", syntax: "SUM(数字1, 数字2, ...)", desc: "返回所有数值的和", example: 'SUM(1, 2, 3) → 6' },
+                { name: "SUMIF", syntax: "SUMIF(范围, 条件, [求和范围])", desc: "对满足条件的单元格求和", example: 'SUMIF([部门], "销售", [金额])' },
+                { name: "SUMPRODUCT", syntax: "SUMPRODUCT(数组1, 数组2, ...)", desc: "返回数组对应元素乘积之和", example: 'SUMPRODUCT([数量], [单价])' },
+            ]
+        }, {
+            category: "查找与引用",
+            list: [
+                { name: "FILTER", syntax: "FILTER(数组, 条件)", desc: "根据条件筛选数组中的元素", example: 'FILTER([分数], [分数] > 60)' },
+                { name: "LIST", syntax: "LIST(值1, 值2, ...)", desc: "创建一个列表/数组", example: 'LIST("a", "b", "c")' },
+                { name: "MAP", syntax: "MAP(数组, 映射逻辑)", desc: "按照自定义映射逻辑批量处理数据", example: 'MAP(LIST("a","b"), UPPER(CurrentValue))' },
+                { name: "SORT", syntax: "SORT(数组, [升序])", desc: "对数组进行排序", example: 'SORT([分数], FALSE) // 降序' },
+                { name: "SORTBY", syntax: "SORTBY(数组, 排序依据, [升序])", desc: "根据另一个数组对数组进行排序", example: 'SORTBY([销售额], [日期])' },
+                { name: "UNIQUE", syntax: "UNIQUE(数组)", desc: "返回数组中的唯一值", example: 'UNIQUE(LIST("a","b","a")) → ["a","b"]' },
+                { name: "CurrentValue", syntax: "CurrentValue", desc: "在 MAP 等函数中代表当前处理的元素", example: 'MAP(LIST(1,2,3), CurrentValue * 2)' },
+            ]
+        }, {
+            category: "数组与高级",
+            list: [
+                { name: "ARRAYFORMULA", syntax: "ARRAYFORMULA(数组公式)", desc: "对数组中的每个元素执行公式运算", example: 'ARRAYFORMULA([数量] * [单价])' },
+                { name: "CHOOSE", syntax: "CHOOSE(索引, 值1, 值2, ...)", desc: "根据索引从列表中返回对应的值", example: 'CHOOSE(2, "一", "二", "三") → "二"' },
+                { name: "FLATTEN", syntax: "FLATTEN(数组)", desc: "将多维数组展平为一维数组", example: 'FLATTEN(LIST(LIST(1,2), LIST(3,4))) → [1,2,3,4]' },
+                { name: "REDUCE", syntax: "REDUCE(初始值, 数组, 聚合逻辑)", desc: "将数组中的元素聚合成一个值", example: 'REDUCE(0, LIST(1,2,3), CurrentValue + Accumulator)' },
+                { name: "SEQUENCE", syntax: "SEQUENCE(行数, [列数], [起始值], [步长])", desc: "生成一个数字序列", example: 'SEQUENCE(3) → [1,2,3]' },
+                { name: "TRANSPOSE", syntax: "TRANSPOSE(数组)", desc: "将数组的行列转置", example: 'TRANSPOSE(LIST(LIST(1,2), LIST(3,4)))' },
+            ]
+        }];
+
+        // ================================================================
+        // 2. 状态
+        // ================================================================
+        let currentCategory = "全部";
+        let searchKeyword = "";
+
+        // ================================================================
+        // 3. DOM 引用
+        // ================================================================
+        const searchInput = document.getElementById("searchInput");
+        const categoryTabs = document.getElementById("categoryTabs");
+        const formulaList = document.getElementById("formulaList");
+        const stats = document.getElementById("stats");
+        const toast = document.getElementById("toast");
+
+        let toastTimer = null;
+
+        // ================================================================
+        // 4. 工具函数
+        // ================================================================
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.classList.add("show");
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
+        }
+
+        function copyToClipboard(text) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast("✅ 已复制: " + text);
+                }).catch(() => {
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.opacity = "0";
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand("copy");
+                showToast("✅ 已复制: " + text);
+            } catch (_) {
+                showToast("⚠️ 复制失败，请手动复制");
+            }
+            document.body.removeChild(ta);
+        }
+
+        // ================================================================
+        // 5. 渲染函数
+        // ================================================================
+        function render() {
+            // 5a. 收集所有公式（带分类标记）
+            let allItems = [];
+            FORMULAS.forEach(cat => {
+                cat.list.forEach(f => {
+                    allItems.push({
+                        ...f,
+                        _category: cat.category
+                    });
+                });
+            });
+
+            // 5b. 过滤
+            let filtered = allItems;
+            if (currentCategory !== "全部") {
+                filtered = filtered.filter(f => f._category === currentCategory);
+            }
+            if (searchKeyword.trim()) {
+                const kw = searchKeyword.trim().toLowerCase();
+                filtered = filtered.filter(f =>
+                    f.name.toLowerCase().includes(kw) ||
+                    f.desc.toLowerCase().includes(kw) ||
+                    f.syntax.toLowerCase().includes(kw)
+                );
+            }
+
+            // 5c. 渲染分类标签
+            const cats = ["全部", ...FORMULAS.map(c => c.category)];
+            categoryTabs.innerHTML = cats.map(cat =>
+                `<button class="tab ${cat === currentCategory ? 'active' : ''}" data-cat="${cat}">${cat}</button>`
+            ).join("");
+
+            // 5d. 渲染公式列表
+            if (filtered.length === 0) {
+                formulaList.innerHTML = `<div class="empty">🔍 没有找到匹配的公式</div>`;
+            } else {
+                formulaList.innerHTML = filtered.map(f => `
+                    <div class="formula-item">
+                        <div class="name">
+                            ${f.name}
+                            <span class="copy-btn" data-copy="${f.syntax}">📋 复制</span>
+                        </div>
+                        <div class="syntax">${f.syntax}</div>
+                        <div class="desc">${f.desc}</div>
+                        ${f.example ? `<div class="example"><strong>示例</strong> ${f.example}</div>` : ''}
+                    </div>
+                `).join("");
+
+                // 绑定复制事件
+                document.querySelectorAll(".copy-btn").forEach(btn => {
+                    btn.addEventListener("click", function(e) {
+                        e.stopPropagation();
+                        const text = this.dataset.copy;
+                        if (text) copyToClipboard(text);
+                    });
+                });
+            }
+
+            // 5e. 统计
+            const total = allItems.length;
+            stats.textContent = `共 ${total} 个公式  ·  当前显示 ${filtered.length} 个`;
+        }
+
+        // ================================================================
+        // 6. 事件绑定
+        // ================================================================
+
+        // 搜索输入
+        searchInput.addEventListener("input", function() {
+            searchKeyword = this.value;
+            render();
+        });
+
+        // 分类点击（事件委托）
+        categoryTabs.addEventListener("click", function(e) {
+            const tab = e.target.closest(".tab");
+            if (!tab) return;
+            const cat = tab.dataset.cat;
+            if (cat && cat !== currentCategory) {
+                currentCategory = cat;
+                render();
+            }
+        });
+
+        // ================================================================
+        // 7. 启动
+        // ================================================================
+        render();
+    </script>
+
+</body>
+</html>
