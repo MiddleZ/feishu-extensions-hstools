@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>多维表格公式助手</title>
     <style>
-        /* ===== 全局重置 & 字体 ===== */
+        /* ===== 全局重置 ===== */
         * {
             margin: 0;
             padding: 0;
@@ -19,9 +19,11 @@
             padding: 16px;
             font-size: 14px;
             line-height: 1.6;
+            /* 为底部固定的面板预留空间，避免内容被遮挡 */
+            padding-bottom: 140px;
         }
 
-        /* ===== 头部 ===== */
+        /* ===== 头部（保持不变） ===== */
         .header {
             margin-bottom: 16px;
         }
@@ -51,73 +53,7 @@
             margin-top: 2px;
         }
 
-        /* ===== 搜索框 ===== */
-        .search-box {
-            position: relative;
-            margin-bottom: 16px;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 8px 12px 8px 36px;
-            border: 1px solid #e5e6eb;
-            border-radius: 8px;
-            font-size: 14px;
-            background: #ffffff;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            outline: none;
-        }
-
-        .search-box input:focus {
-            border-color: #3370ff;
-            box-shadow: 0 0 0 3px rgba(51, 112, 255, 0.15);
-        }
-
-        .search-box input::placeholder {
-            color: #c9cdd4;
-        }
-
-        .search-box .icon {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #c9cdd4;
-            font-size: 16px;
-            pointer-events: none;
-        }
-
-        /* ===== 分类标签 ===== */
-        .category-tabs {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            margin-bottom: 16px;
-        }
-
-        .category-tabs .tab {
-            padding: 4px 14px;
-            border-radius: 14px;
-            font-size: 13px;
-            background: #f2f3f5;
-            color: #4e5a70;
-            cursor: pointer;
-            transition: background 0.2s, color 0.2s;
-            border: none;
-            user-select: none;
-            white-space: nowrap;
-        }
-
-        .category-tabs .tab:hover {
-            background: #e5e6eb;
-        }
-
-        .category-tabs .tab.active {
-            background: #3370ff;
-            color: #ffffff;
-        }
-
-        /* ===== 公式列表 ===== */
+        /* ===== 公式列表（保持不变） ===== */
         .formula-list {
             display: flex;
             flex-direction: column;
@@ -214,14 +150,120 @@
             font-size: 14px;
         }
 
-        /* ===== 统计信息 ===== */
+        /* ===== 🆕 浮动面板（搜索 + 分类标签） ===== */
+        .floating-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 320px;                 /* 可自行调整宽度 */
+            max-width: calc(100% - 40px);
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            padding: 12px 14px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            z-index: 1000;
+        }
+
+        /* 浮动面板内的搜索框 */
+        .floating-panel .search-box {
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .floating-panel .search-box input {
+            width: 100%;
+            padding: 6px 12px 6px 32px;
+            border: 1px solid #e5e6eb;
+            border-radius: 8px;
+            font-size: 13px;
+            background: #ffffff;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .floating-panel .search-box input:focus {
+            border-color: #3370ff;
+            box-shadow: 0 0 0 3px rgba(51, 112, 255, 0.15);
+        }
+
+        .floating-panel .search-box .icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #c9cdd4;
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        /* 浮动面板内的分类标签 */
+        .floating-panel .category-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .floating-panel .category-tabs .tab {
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            background: #f2f3f5;
+            color: #4e5a70;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            border: none;
+            user-select: none;
+            white-space: nowrap;
+            line-height: 22px;
+        }
+
+        .floating-panel .category-tabs .tab:hover {
+            background: #e5e6eb;
+        }
+
+        .floating-panel .category-tabs .tab.active {
+            background: #3370ff;
+            color: #ffffff;
+        }
+
+        /* ===== 统计信息（移至左下角） ===== */
         .stats {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
             font-size: 12px;
             color: #86909c;
-            margin-top: 16px;
-            text-align: center;
-            border-top: 1px solid #f0f1f3;
-            padding-top: 14px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(4px);
+            padding: 4px 14px;
+            border-radius: 16px;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+            z-index: 999;
+            border-top: none;
+            margin: 0;
+        }
+
+        /* ===== Toast 提示 ===== */
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1d2129;
+            color: #ffffff;
+            padding: 6px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .toast.show {
+            opacity: 1;
         }
 
         /* ===== 滚动条美化 ===== */
@@ -238,27 +280,6 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #c9cdd4;
         }
-
-        /* ===== Toast 提示 ===== */
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1d2129;
-            color: #ffffff;
-            padding: 8px 20px;
-            border-radius: 8px;
-            font-size: 13px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
-            z-index: 999;
-        }
-
-        .toast.show {
-            opacity: 1;
-        }
     </style>
 </head>
 <body>
@@ -272,15 +293,17 @@
         <div class="sub">点击公式旁的「复制」即可粘贴到编辑器</div>
     </div>
 
-    <!-- ===== 搜索框 ===== -->
-    <div class="search-box">
-        <span class="icon">🔍</span>
-        <input type="text" id="searchInput" placeholder="搜索公式名称、功能…" />
-    </div>
-
-    <!-- ===== 分类标签 ===== -->
-    <div class="category-tabs" id="categoryTabs">
-        <!-- 由 JavaScript 动态渲染 -->
+    <!-- ===== 🆕 浮动面板：搜索 + 分类标签 ===== -->
+    <div class="floating-panel">
+        <!-- 搜索框 -->
+        <div class="search-box">
+            <span class="icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="搜索公式名称、功能…" />
+        </div>
+        <!-- 分类标签 -->
+        <div class="category-tabs" id="categoryTabs">
+            <!-- 由 JavaScript 动态渲染 -->
+        </div>
     </div>
 
     <!-- ===== 公式列表 ===== -->
@@ -288,7 +311,7 @@
         <!-- 由 JavaScript 动态渲染 -->
     </div>
 
-    <!-- ===== 统计信息 ===== -->
+    <!-- ===== 统计信息（左下角） ===== -->
     <div class="stats" id="stats">加载中…</div>
 
     <!-- ===== Toast ===== -->
@@ -296,9 +319,7 @@
 
     <script>
         // ================================================================
-        // 1. 数据：从飞书官方文档整理的多维表格公式（按分类）
-        //    来源：https://www.feishu.cn/hc/zh-CN/articles/687638790379
-        //         https://www.larksuite.com/hc/en-US/articles/914838661184
+        // 数据（与之前完全一致）
         // ================================================================
         const FORMULAS = [{
             category: "日期与时间",
@@ -403,13 +424,13 @@
         }];
 
         // ================================================================
-        // 2. 状态
+        // 状态
         // ================================================================
         let currentCategory = "全部";
         let searchKeyword = "";
 
         // ================================================================
-        // 3. DOM 引用
+        // DOM 引用
         // ================================================================
         const searchInput = document.getElementById("searchInput");
         const categoryTabs = document.getElementById("categoryTabs");
@@ -420,7 +441,7 @@
         let toastTimer = null;
 
         // ================================================================
-        // 4. 工具函数
+        // 工具函数
         // ================================================================
         function showToast(msg) {
             toast.textContent = msg;
@@ -458,10 +479,9 @@
         }
 
         // ================================================================
-        // 5. 渲染函数
+        // 渲染函数
         // ================================================================
         function render() {
-            // 5a. 收集所有公式（带分类标记）
             let allItems = [];
             FORMULAS.forEach(cat => {
                 cat.list.forEach(f => {
@@ -472,7 +492,6 @@
                 });
             });
 
-            // 5b. 过滤
             let filtered = allItems;
             if (currentCategory !== "全部") {
                 filtered = filtered.filter(f => f._category === currentCategory);
@@ -486,13 +505,13 @@
                 );
             }
 
-            // 5c. 渲染分类标签
+            // 渲染分类标签
             const cats = ["全部", ...FORMULAS.map(c => c.category)];
             categoryTabs.innerHTML = cats.map(cat =>
                 `<button class="tab ${cat === currentCategory ? 'active' : ''}" data-cat="${cat}">${cat}</button>`
             ).join("");
 
-            // 5d. 渲染公式列表
+            // 渲染公式列表
             if (filtered.length === 0) {
                 formulaList.innerHTML = `<div class="empty">🔍 没有找到匹配的公式</div>`;
             } else {
@@ -508,7 +527,6 @@
                     </div>
                 `).join("");
 
-                // 绑定复制事件
                 document.querySelectorAll(".copy-btn").forEach(btn => {
                     btn.addEventListener("click", function(e) {
                         e.stopPropagation();
@@ -518,22 +536,18 @@
                 });
             }
 
-            // 5e. 统计
             const total = allItems.length;
             stats.textContent = `共 ${total} 个公式  ·  当前显示 ${filtered.length} 个`;
         }
 
         // ================================================================
-        // 6. 事件绑定
+        // 事件绑定
         // ================================================================
-
-        // 搜索输入
         searchInput.addEventListener("input", function() {
             searchKeyword = this.value;
             render();
         });
 
-        // 分类点击（事件委托）
         categoryTabs.addEventListener("click", function(e) {
             const tab = e.target.closest(".tab");
             if (!tab) return;
@@ -545,7 +559,7 @@
         });
 
         // ================================================================
-        // 7. 启动
+        // 启动
         // ================================================================
         render();
     </script>
